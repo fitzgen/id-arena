@@ -1,5 +1,10 @@
 # `id-arena`
 
+[![](https://docs.rs/id-arena/badge.svg)](https://docs.rs/id-arena/)
+[![](https://img.shields.io/crates/v/id-arena.svg)](https://crates.io/crates/id-arena)
+[![](https://img.shields.io/crates/d/id-arena.svg)](https://crates.io/crates/id-arena)
+[![Travis CI Build Status](https://travis-ci.org/fitzgen/id-arena.svg?branch=master)](https://travis-ci.org/fitzgen/id-arena)
+
 A simple, id-based arena.
 
 ### Id-based
@@ -65,7 +70,7 @@ pub enum AstNode {
 
 let mut ast_nodes = Arena::new();
 
-// Create the AST for `a * b + 3`.
+// Create the AST for `a * (b + 3)`.
 let three = ast_nodes.alloc(AstNode::Const(3));
 let b = ast_nodes.alloc(AstNode::Var("b".into()));
 let b_plus_three = ast_nodes.alloc(AstNode::Add {
