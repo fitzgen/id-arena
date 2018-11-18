@@ -142,6 +142,7 @@ impl<T> Clone for Id<T> {
 }
 
 impl<T> PartialEq for Id<T> {
+    #[inline]
     fn eq(&self, rhs: &Self) -> bool {
         self.idx == rhs.idx
     }
@@ -150,6 +151,7 @@ impl<T> PartialEq for Id<T> {
 impl<T> Eq for Id<T> {}
 
 impl<T> Hash for Id<T> {
+    #[inline]
     fn hash<H: Hasher>(&self, h: &mut H) {
         self.arena_id.hash(h);
         self.idx.hash(h);
@@ -307,6 +309,7 @@ impl<T> Arena<T> {
 impl<T> ops::Index<Id<T>> for Arena<T> {
     type Output = T;
 
+    #[inline]
     fn index(&self, id: Id<T>) -> &T {
         assert_eq!(self.arena_id, id.arena_id);
         &self.items[id.idx]
@@ -314,6 +317,7 @@ impl<T> ops::Index<Id<T>> for Arena<T> {
 }
 
 impl<T> ops::IndexMut<Id<T>> for Arena<T> {
+    #[inline]
     fn index_mut(&mut self, id: Id<T>) -> &mut T {
         assert_eq!(self.arena_id, id.arena_id);
         &mut self.items[id.idx]
@@ -331,6 +335,8 @@ pub struct Iter<'a, T: 'a> {
 
 impl<'a, T: 'a> Iterator for Iter<'a, T> {
     type Item = (Id<T>, &'a T);
+
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|(idx, item)| {
             let arena_id = self.arena_id;
@@ -350,6 +356,7 @@ impl<'a, T> IntoIterator for &'a Arena<T> {
     type Item = (Id<T>, &'a T);
     type IntoIter = Iter<'a, T>;
 
+    #[inline]
     fn into_iter(self) -> Iter<'a, T> {
         Iter {
             arena_id: self.arena_id,
