@@ -156,6 +156,14 @@ impl<T> Hash for Id<T> {
     }
 }
 
+impl<T> Id<T> {
+    /// Get the index within the arena that this id refers to.
+    #[inline]
+    pub fn index(&self) -> usize {
+        self.idx
+    }
+}
+
 static ARENA_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
 
 /// An arena of objects of type `T`.
