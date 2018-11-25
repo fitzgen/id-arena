@@ -1,4 +1,3 @@
-//! [![](https://docs.rs/id-arena/badge.svg)](https://docs.rs/id-arena/)
 //! [![](https://img.shields.io/crates/v/id-arena.svg)](https://crates.io/crates/id-arena)
 //! [![](https://img.shields.io/crates/d/id-arena.svg)](https://crates.io/crates/id-arena)
 //! [![Travis CI Build Status](https://travis-ci.org/fitzgen/id-arena.svg?branch=master)](https://travis-ci.org/fitzgen/id-arena)
@@ -142,7 +141,7 @@ use imports::*;
 /// data representation.
 pub trait ArenaBehavior {
     /// The identifier type.
-    type Id;
+    type Id: Copy;
 
     /// Construct a new object identifier from the given index and arena
     /// identifier.
@@ -155,10 +154,10 @@ pub trait ArenaBehavior {
     fn new_id(index: usize, arena_id: usize) -> Self::Id;
 
     /// Get the given identifier's index.
-    fn index(&Self::Id) -> usize;
+    fn index(Self::Id) -> usize;
 
     /// Get the given identifier's arena id.
-    fn arena_id(&Self::Id) -> usize;
+    fn arena_id(Self::Id) -> usize;
 
     /// Construct a new arena identifier.
     ///
@@ -241,12 +240,12 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
     }
 
     #[inline]
-    fn index(id: &Self::Id) -> usize {
+    fn index(id: Self::Id) -> usize {
         id.idx
     }
 
     #[inline]
-    fn arena_id(id: &Self::Id) -> usize {
+    fn arena_id(id: Self::Id) -> usize {
         id.arena_id
     }
 }
@@ -271,9 +270,9 @@ pub struct Arena<T, A = DefaultArenaBehavior<T>> {
     _phantom: PhantomData<fn() -> A>,
 }
 
-impl<T, I, A> Default for Arena<T, A>
+impl<T, A> Default for Arena<T, A>
 where
-    A: ArenaBehavior<Id = I>,
+    A: ArenaBehavior,
 {
     #[inline]
     fn default() -> Arena<T, A> {
@@ -285,9 +284,9 @@ where
     }
 }
 
-impl<T, I, A> Arena<T, A>
+impl<T, A> Arena<T, A>
 where
-    A: ArenaBehavior<Id = I>,
+    A: ArenaBehavior,
 {
     /// Construct a new, empty `Arena`.
     ///
@@ -342,10 +341,10 @@ where
     /// ```
     #[inline]
     pub fn get(&self, id: A::Id) -> Option<&T> {
-        if A::arena_id(&id) != self.arena_id {
+        if A::arena_id(id) != self.arena_id {
             None
         } else {
-            self.items.get(A::index(&id))
+            self.items.get(A::index(id))
         }
     }
 
@@ -368,10 +367,10 @@ where
     /// ```
     #[inline]
     pub fn get_mut(&mut self, id: A::Id) -> Option<&mut T> {
-        if A::arena_id(&id) != self.arena_id {
+        if A::arena_id(id) != self.arena_id {
             None
         } else {
-            self.items.get_mut(A::index(&id))
+            self.items.get_mut(A::index(id))
         }
     }
 
@@ -422,8 +421,8 @@ where
 
     #[inline]
     fn index(&self, id: A::Id) -> &T {
-        assert_eq!(self.arena_id, A::arena_id(&id));
-        &self.items[A::index(&id)]
+        assert_eq!(self.arena_id, A::arena_id(id));
+        &self.items[A::index(id)]
     }
 }
 
@@ -433,8 +432,8 @@ where
 {
     #[inline]
     fn index_mut(&mut self, id: A::Id) -> &mut T {
-        assert_eq!(self.arena_id, A::arena_id(&id));
-        &mut self.items[A::index(&id)]
+        assert_eq!(self.arena_id, A::arena_id(id));
+        &mut self.items[A::index(id)]
     }
 }
 

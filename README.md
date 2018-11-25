@@ -1,6 +1,5 @@
 # `id-arena`
 
-[![](https://docs.rs/id-arena/badge.svg)](https://docs.rs/id-arena/)
 [![](https://img.shields.io/crates/v/id-arena.svg)](https://crates.io/crates/id-arena)
 [![](https://img.shields.io/crates/d/id-arena.svg)](https://crates.io/crates/id-arena)
 [![Travis CI Build Status](https://travis-ci.org/fitzgen/id-arena.svg?branch=master)](https://travis-ci.org/fitzgen/id-arena)
