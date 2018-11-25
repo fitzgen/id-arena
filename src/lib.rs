@@ -222,7 +222,7 @@ impl<T> Id<T> {
     }
 }
 
-/// TODO
+/// The default `ArenaBehavior` implementation.
 #[derive(Debug)]
 pub struct DefaultArenaBehavior<T> {
     _phantom: PhantomData<fn() -> T>,
@@ -254,7 +254,7 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
 /// An arena of objects of type `T`.
 ///
 /// ```
-/// use id_arena::{Arena, Id};
+/// use id_arena::Arena;
 ///
 /// let mut arena = Arena::<&str>::new();
 ///
@@ -292,7 +292,7 @@ where
     /// Construct a new, empty `Arena`.
     ///
     /// ```
-    /// use id_arena::{Arena, Id};
+    /// use id_arena::Arena;
     ///
     /// let mut arena = Arena::<usize>::new();
     /// arena.alloc(42);
@@ -331,7 +331,7 @@ where
     /// `None`.
     ///
     /// ```
-    /// use id_arena::{Arena, Id};
+    /// use id_arena::Arena;
     ///
     /// let mut arena = Arena::<usize>::new();
     /// let id = arena.alloc(42);
@@ -357,7 +357,7 @@ where
     /// `None`.
     ///
     /// ```
-    /// use id_arena::{Arena, Id};
+    /// use id_arena::Arena;
     ///
     /// let mut arena = Arena::<usize>::new();
     /// let id = arena.alloc(42);
@@ -378,7 +378,7 @@ where
     /// Iterate over this arena's items and their ids.
     ///
     /// ```
-    /// use id_arena::{Arena, Id};
+    /// use id_arena::Arena;
     ///
     /// let mut arena = Arena::<&str>::new();
     ///
@@ -399,7 +399,7 @@ where
     /// Get the number of objects allocated in this arena.
     ///
     /// ```
-    /// use id_arena::{Arena, Id};
+    /// use id_arena::Arena;
     ///
     /// let mut arena = Arena::<&str>::new();
     ///
