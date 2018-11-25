@@ -263,7 +263,7 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
 /// arena[a] = "Alice";
 /// assert_eq!(arena[a], "Alice");
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Arena<T, A = DefaultArenaBehavior<T>> {
     arena_id: usize,
     items: Vec<T>,
