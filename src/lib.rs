@@ -144,7 +144,7 @@ impl<T> Clone for Id<T> {
 impl<T> PartialEq for Id<T> {
     #[inline]
     fn eq(&self, rhs: &Self) -> bool {
-        self.idx == rhs.idx
+        self.arena_id == rhs.arena_id && self.idx == rhs.idx
     }
 }
 
