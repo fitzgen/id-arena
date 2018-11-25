@@ -123,7 +123,7 @@ use imports::*;
 pub struct Id<T> {
     idx: usize,
     arena_id: usize,
-    _ty: PhantomData<*const T>,
+    _ty: PhantomData<fn() -> T>,
 }
 
 impl<T> fmt::Debug for Id<T> {
@@ -362,5 +362,18 @@ impl<'a, T> IntoIterator for &'a Arena<T> {
             arena_id: self.arena_id,
             iter: self.items.iter().enumerate(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ids_are_send_sync() {
+        fn assert_send_sync<T: Send + Sync>() {
+        }
+        struct Foo;
+        assert_send_sync::<Id<Foo>>();
     }
 }
