@@ -222,7 +222,7 @@ impl<T> Id<T> {
 }
 
 /// The default `ArenaBehavior` implementation.
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DefaultArenaBehavior<T> {
     _phantom: PhantomData<fn() -> T>,
 }
