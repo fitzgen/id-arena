@@ -68,7 +68,7 @@ pub enum AstNode {
     },
 }
 
-let mut ast_nodes = Arena::new();
+let mut ast_nodes = Arena::<AstNode>::new();
 
 // Create the AST for `a * (b + 3)`.
 let three = ast_nodes.alloc(AstNode::Const(3));
