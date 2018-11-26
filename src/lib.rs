@@ -151,7 +151,7 @@ pub trait ArenaBehavior {
     /// Implementations are allowed to panic if the given index is larger than
     /// the underlying storage (e.g. the implementation uses a `u8` for storing
     /// indices and the given index value is larger than 255).
-    fn new_id(index: usize, arena_id: usize) -> Self::Id;
+    fn new_id(arena_id: usize, index: usize) -> Self::Id;
 
     /// Get the given identifier's index.
     fn index(Self::Id) -> usize;
@@ -231,7 +231,7 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
     type Id = Id<T>;
 
     #[inline]
-    fn new_id(idx: usize, arena_id: usize) -> Self::Id {
+    fn new_id(arena_id: usize, idx: usize) -> Self::Id {
         Id {
             idx,
             arena_id,
@@ -319,7 +319,7 @@ where
         let arena_id = self.arena_id;
         let idx = self.items.len();
         self.items.push(item);
-        A::new_id(idx, arena_id)
+        A::new_id(arena_id, idx)
     }
 
     /// Get a shared reference to the object associated with the given `id` if
@@ -457,7 +457,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|(idx, item)| {
             let arena_id = self.arena_id;
-            (A::new_id(idx, arena_id), item)
+            (A::new_id(arena_id, idx), item)
         })
     }
 }
