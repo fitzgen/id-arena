@@ -34,7 +34,7 @@ Requires the `alloc` nightly feature. Disable the on-by-default `"std"` feature:
 
 ```toml
 [dependencies.id-arena]
-version = "1"
+version = "2"
 default-features = false
 ```
 

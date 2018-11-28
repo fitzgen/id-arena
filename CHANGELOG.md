@@ -1,3 +1,12 @@
+# 2.0.0
+
+Released 2018-11-28.
+
+* Introduces the `ArenaBehavior` trait, which allows one to customize identifier
+  types and do things like implement space optimizations or use identifiers for
+  many arenas at once.
+* Implements `Clone`, `PartialEq` and `Eq` for arenas.
+
 # 1.0.2
 
 Released 2018-11-25.

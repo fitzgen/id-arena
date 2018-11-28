@@ -32,7 +32,7 @@
 //!
 //! ```toml
 //! [dependencies.id-arena]
-//! version = "1"
+//! version = "2"
 //! default-features = false
 //! ```
 //!
