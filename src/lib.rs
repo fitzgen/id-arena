@@ -151,33 +151,33 @@ pub trait ArenaBehavior {
     /// Implementations are allowed to panic if the given index is larger than
     /// the underlying storage (e.g. the implementation uses a `u8` for storing
     /// indices and the given index value is larger than 255).
-    fn new_id(arena_id: usize, index: usize) -> Self::Id;
+    fn new_id(arena_id: u32, index: usize) -> Self::Id;
 
     /// Get the given identifier's index.
     fn index(Self::Id) -> usize;
 
     /// Get the given identifier's arena id.
-    fn arena_id(Self::Id) -> usize;
+    fn arena_id(Self::Id) -> u32;
 
     /// Construct a new arena identifier.
     ///
     /// This is used to disambiguate `Id`s across different arenas. To make
     /// identifiers with the same index from different arenas compare false for
-    /// equality, return a unique `usize` on every invocation. This is the
+    /// equality, return a unique `u32` on every invocation. This is the
     /// default, provided implementation's behavior.
     ///
     /// To make identifiers with the same index from different arenas compare
-    /// true for equality, return the same `usize` on every invocation.
-    fn new_arena_id() -> usize {
+    /// true for equality, return the same `u32` on every invocation.
+    fn new_arena_id() -> u32 {
         static ARENA_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
-        ARENA_COUNTER.fetch_add(1, atomic::Ordering::SeqCst)
+        ARENA_COUNTER.fetch_add(1, atomic::Ordering::SeqCst) as u32
     }
 }
 
 /// An identifier for an object allocated within an arena.
 pub struct Id<T> {
     idx: usize,
-    arena_id: usize,
+    arena_id: u32,
     _ty: PhantomData<fn() -> T>,
 }
 
@@ -231,7 +231,7 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
     type Id = Id<T>;
 
     #[inline]
-    fn new_id(arena_id: usize, idx: usize) -> Self::Id {
+    fn new_id(arena_id: u32, idx: usize) -> Self::Id {
         Id {
             idx,
             arena_id,
@@ -245,7 +245,7 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
     }
 
     #[inline]
-    fn arena_id(id: Self::Id) -> usize {
+    fn arena_id(id: Self::Id) -> u32 {
         id.arena_id
     }
 }
@@ -265,7 +265,7 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Arena<T, A = DefaultArenaBehavior<T>> {
-    arena_id: usize,
+    arena_id: u32,
     items: Vec<T>,
     _phantom: PhantomData<fn() -> A>,
 }
@@ -442,7 +442,7 @@ where
 /// See [the `Arena::iter()` method](./struct.Arena.html#method.iter) for details.
 #[derive(Debug)]
 pub struct Iter<'a, T: 'a, A: 'a> {
-    arena_id: usize,
+    arena_id: u32,
     iter: iter::Enumerate<slice::Iter<'a, T>>,
     _phantom: PhantomData<fn() -> A>,
 }
