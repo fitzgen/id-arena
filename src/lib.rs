@@ -93,6 +93,7 @@
 
 #[cfg(feature = "std")]
 mod imports {
+    pub use std::cmp::Ordering;
     pub use std::fmt;
     pub use std::hash::{Hash, Hasher};
     pub use std::iter;
@@ -106,6 +107,7 @@ mod imports {
 mod imports {
     extern crate alloc;
     pub use self::alloc::vec::Vec;
+    pub use core::cmp::Ordering;
     pub use core::fmt;
     pub use core::hash::{Hash, Hasher};
     pub use core::iter;
@@ -213,6 +215,20 @@ impl<T> Hash for Id<T> {
     }
 }
 
+impl<T> PartialOrd for Id<T> {
+    fn partial_cmp(&self, rhs: &Self) -> Option<Ordering> {
+        Some(self.cmp(rhs))
+    }
+}
+
+impl<T> Ord for Id<T> {
+    fn cmp(&self, rhs: &Self) -> Ordering {
+        self.arena_id
+            .cmp(&rhs.arena_id)
+            .then(self.idx.cmp(&rhs.idx))
+    }
+}
+
 impl<T> Id<T> {
     /// Get the index within the arena that this id refers to.
     #[inline]
@@ -301,10 +317,30 @@ where
         Default::default()
     }
 
+    /// Construct a new, empty `Arena` with capacity for the given number of
+    /// elements.
+    ///
+    /// ```
+    /// use id_arena::Arena;
+    ///
+    /// let mut arena = Arena::<usize>::with_capacity(100);
+    /// for x in 0..100 {
+    ///     arena.alloc(x * x);
+    /// }
+    /// ```
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Arena<T, A> {
+        Arena {
+            arena_id: A::new_arena_id(),
+            items: Vec::with_capacity(capacity),
+            _phantom: PhantomData,
+        }
+    }
+
     /// Allocate `item` within this arena and return its id.
     ///
     /// ```
-    /// use id_arena::{Arena, DefaultArenaBehavior};
+    /// use id_arena::Arena;
     ///
     /// let mut arena = Arena::<usize>::new();
     /// let _id = arena.alloc(42);
@@ -316,9 +352,36 @@ where
     /// `Id`'s index storage representation.
     #[inline]
     pub fn alloc(&mut self, item: T) -> A::Id {
+        let id = self.next_id();
+        self.items.push(item);
+        id
+    }
+
+    /// Get the id that will be used for the next item allocated into this
+    /// arena.
+    ///
+    /// This is useful for structures that want to store their id as their own
+    /// member.
+    ///
+    /// ```
+    /// use id_arena::{Arena, Id};
+    ///
+    /// struct Cat {
+    ///     id: Id<Cat>,
+    /// }
+    ///
+    /// let mut arena = Arena::<Cat>::new();
+    ///
+    /// let id = arena.next_id();
+    /// assert!(arena.get(id).is_none());
+    ///
+    /// let id2 = arena.alloc(Cat { id });
+    /// assert_eq!(id, id2);
+    /// assert!(arena.get(id).is_some());
+    /// ```
+    pub fn next_id(&mut self) -> A::Id {
         let arena_id = self.arena_id;
         let idx = self.items.len();
-        self.items.push(item);
         A::new_id(arena_id, idx)
     }
 
