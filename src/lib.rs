@@ -317,6 +317,26 @@ where
         Default::default()
     }
 
+    /// Construct a new, empty `Arena` with capacity for the given number of
+    /// elements.
+    ///
+    /// ```
+    /// use id_arena::Arena;
+    ///
+    /// let mut arena = Arena::<usize>::with_capacity(100);
+    /// for x in 0..100 {
+    ///     arena.alloc(x * x);
+    /// }
+    /// ```
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Arena<T, A> {
+        Arena {
+            arena_id: A::new_arena_id(),
+            items: Vec::with_capacity(capacity),
+            _phantom: PhantomData,
+        }
+    }
+
     /// Allocate `item` within this arena and return its id.
     ///
     /// ```
