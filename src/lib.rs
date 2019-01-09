@@ -93,6 +93,7 @@
 
 #[cfg(feature = "std")]
 mod imports {
+    pub use std::cmp::Ordering;
     pub use std::fmt;
     pub use std::hash::{Hash, Hasher};
     pub use std::iter;
@@ -106,6 +107,7 @@ mod imports {
 mod imports {
     extern crate alloc;
     pub use self::alloc::vec::Vec;
+    pub use core::cmp::Ordering;
     pub use core::fmt;
     pub use core::hash::{Hash, Hasher};
     pub use core::iter;
@@ -210,6 +212,20 @@ impl<T> Hash for Id<T> {
     fn hash<H: Hasher>(&self, h: &mut H) {
         self.arena_id.hash(h);
         self.idx.hash(h);
+    }
+}
+
+impl<T> PartialOrd for Id<T> {
+    fn partial_cmp(&self, rhs: &Self) -> Option<Ordering> {
+        Some(self.cmp(rhs))
+    }
+}
+
+impl<T> Ord for Id<T> {
+    fn cmp(&self, rhs: &Self) -> Ordering {
+        self.arena_id
+            .cmp(&rhs.arena_id)
+            .then(self.idx.cmp(&rhs.idx))
     }
 }
 
