@@ -340,7 +340,7 @@ where
     /// Allocate `item` within this arena and return its id.
     ///
     /// ```
-    /// use id_arena::{Arena, DefaultArenaBehavior};
+    /// use id_arena::Arena;
     ///
     /// let mut arena = Arena::<usize>::new();
     /// let _id = arena.alloc(42);
@@ -352,9 +352,36 @@ where
     /// `Id`'s index storage representation.
     #[inline]
     pub fn alloc(&mut self, item: T) -> A::Id {
+        let id = self.next_id();
+        self.items.push(item);
+        id
+    }
+
+    /// Get the id that will be used for the next item allocated into this
+    /// arena.
+    ///
+    /// This is useful for structures that want to store their id as their own
+    /// member.
+    ///
+    /// ```
+    /// use id_arena::{Arena, Id};
+    ///
+    /// struct Cat {
+    ///     id: Id<Cat>,
+    /// }
+    ///
+    /// let mut arena = Arena::<Cat>::new();
+    ///
+    /// let id = arena.next_id();
+    /// assert!(arena.get(id).is_none());
+    ///
+    /// let id2 = arena.alloc(Cat { id });
+    /// assert_eq!(id, id2);
+    /// assert!(arena.get(id).is_some());
+    /// ```
+    pub fn next_id(&mut self) -> A::Id {
         let arena_id = self.arena_id;
         let idx = self.items.len();
-        self.items.push(item);
         A::new_id(arena_id, idx)
     }
 
