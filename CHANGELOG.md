@@ -1,3 +1,12 @@
+# 2.0.1
+
+Released 2019-01-09.
+
+* Implemented `Ord` and `PartialOrd` for `Id<T>`.
+* Added an `Arena::with_capacity` constructor.
+* Added `Arena::next_id` to get the id that will be used for the next
+  allocation.
+
 # 2.0.0
 
 Released 2018-11-28.
