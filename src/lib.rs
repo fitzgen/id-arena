@@ -88,36 +88,30 @@
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 // In no-std mode, use the alloc crate to get `Vec`.
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 
-#[cfg(feature = "std")]
-mod imports {
-    pub use std::cmp::Ordering;
-    pub use std::fmt;
-    pub use std::hash::{Hash, Hasher};
-    pub use std::iter;
-    pub use std::marker::PhantomData;
-    pub use std::ops;
-    pub use std::slice;
-    pub use std::sync::atomic::{self, AtomicUsize, ATOMIC_USIZE_INIT};
-}
+use core::cmp::Ordering;
+use core::fmt;
+use core::hash::{Hash, Hasher};
+use core::iter;
+use core::marker::PhantomData;
+use core::ops;
+use core::slice;
+use core::sync::atomic::{self, AtomicUsize, ATOMIC_USIZE_INIT};
 
 #[cfg(not(feature = "std"))]
-mod imports {
-    extern crate alloc;
-    pub use self::alloc::vec::Vec;
-    pub use core::cmp::Ordering;
-    pub use core::fmt;
-    pub use core::hash::{Hash, Hasher};
-    pub use core::iter;
-    pub use core::marker::PhantomData;
-    pub use core::ops;
-    pub use core::slice;
-    pub use core::sync::atomic::{self, AtomicUsize, ATOMIC_USIZE_INIT};
-}
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use alloc::vec::{self, Vec};
 
-use imports::*;
+#[cfg(feature = "std")]
+extern crate std;
+#[cfg(feature = "std")]
+use std::vec::{self, Vec};
+
+#[cfg(feature = "rayon")]
+mod rayon;
 
 /// A trait representing the implementation behavior of an arena and how
 /// identifiers are represented.
@@ -458,6 +452,13 @@ where
         IntoIterator::into_iter(self)
     }
 
+    /// Iterate over this arena's items and their ids, allowing mutation of each
+    /// item.
+    #[inline]
+    pub fn iter_mut(&mut self) -> IterMut<T, A> {
+        IntoIterator::into_iter(self)
+    }
+
     /// Get the number of objects allocated in this arena.
     ///
     /// ```
@@ -500,6 +501,13 @@ where
     }
 }
 
+fn add_id<A, T>(item: Option<(usize, T)>, arena_id: u32) -> Option<(A::Id, T)>
+where
+    A: ArenaBehavior,
+{
+    item.map(|(idx, item)| (A::new_id(arena_id, idx), item))
+}
+
 /// An iterator over `(Id, &T)` pairs in an arena.
 ///
 /// See [the `Arena::iter()` method](./struct.Arena.html#method.iter) for details.
@@ -518,10 +526,29 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(|(idx, item)| {
-            let arena_id = self.arena_id;
-            (A::new_id(arena_id, idx), item)
-        })
+        add_id::<A, _>(self.iter.next(), self.arena_id)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a, T: 'a, A: 'a> DoubleEndedIterator for Iter<'a, T, A>
+where
+    A: ArenaBehavior,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        add_id::<A, _>(self.iter.next_back(), self.arena_id)
+    }
+}
+
+impl<'a, T: 'a, A: 'a> ExactSizeIterator for Iter<'a, T, A>
+where
+    A: ArenaBehavior,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
     }
 }
 
@@ -537,6 +564,127 @@ where
         Iter {
             arena_id: self.arena_id,
             iter: self.items.iter().enumerate(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+/// An iterator over `(Id, &mut T)` pairs in an arena.
+///
+/// See [the `Arena::iter_mut()` method](./struct.Arena.html#method.iter_mut)
+/// for details.
+#[derive(Debug)]
+pub struct IterMut<'a, T: 'a, A: 'a> {
+    arena_id: u32,
+    iter: iter::Enumerate<slice::IterMut<'a, T>>,
+    _phantom: PhantomData<fn() -> A>,
+}
+
+impl<'a, T: 'a, A: 'a> Iterator for IterMut<'a, T, A>
+where
+    A: ArenaBehavior,
+{
+    type Item = (A::Id, &'a mut T);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        add_id::<A, _>(self.iter.next(), self.arena_id)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<'a, T: 'a, A: 'a> DoubleEndedIterator for IterMut<'a, T, A>
+where
+    A: ArenaBehavior,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        add_id::<A, _>(self.iter.next_back(), self.arena_id)
+    }
+}
+
+impl<'a, T: 'a, A: 'a> ExactSizeIterator for IterMut<'a, T, A>
+where
+    A: ArenaBehavior,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<'a, T, A> IntoIterator for &'a mut Arena<T, A>
+where
+    A: ArenaBehavior,
+{
+    type Item = (A::Id, &'a mut T);
+    type IntoIter = IterMut<'a, T, A>;
+
+    #[inline]
+    fn into_iter(self) -> IterMut<'a, T, A> {
+        IterMut {
+            arena_id: self.arena_id,
+            iter: self.items.iter_mut().enumerate(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+/// An iterator over `(Id, T)` pairs in an arena.
+#[derive(Debug)]
+pub struct IntoIter<T, A> {
+    arena_id: u32,
+    iter: iter::Enumerate<vec::IntoIter<T>>,
+    _phantom: PhantomData<fn() -> A>,
+}
+
+impl<T, A> Iterator for IntoIter<T, A>
+where
+    A: ArenaBehavior,
+{
+    type Item = (A::Id, T);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        add_id::<A, _>(self.iter.next(), self.arena_id)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<T, A> DoubleEndedIterator for IntoIter<T, A>
+where
+    A: ArenaBehavior,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        add_id::<A, _>(self.iter.next_back(), self.arena_id)
+    }
+}
+
+impl<T, A> ExactSizeIterator for IntoIter<T, A>
+where
+    A: ArenaBehavior,
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<T, A> IntoIterator for Arena<T, A>
+where
+    A: ArenaBehavior,
+{
+    type Item = (A::Id, T);
+    type IntoIter = IntoIter<T, A>;
+
+    #[inline]
+    fn into_iter(self) -> IntoIter<T, A> {
+        IntoIter {
+            arena_id: self.arena_id,
+            iter: self.items.into_iter().enumerate(),
             _phantom: PhantomData,
         }
     }
