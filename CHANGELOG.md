@@ -1,3 +1,12 @@
+# 2.1.0
+
+Released 2019-01-25.
+
+* Added optional support for `rayon` parallel iteration. Enable the `rayon`
+  Cargo feature to get access.
+
+--------------------------------------------------------------------------------
+
 # 2.0.1
 
 Released 2019-01-09.
@@ -7,6 +16,8 @@ Released 2019-01-09.
 * Added `Arena::next_id` to get the id that will be used for the next
   allocation.
 
+--------------------------------------------------------------------------------
+
 # 2.0.0
 
 Released 2018-11-28.
@@ -15,6 +26,8 @@ Released 2018-11-28.
   types and do things like implement space optimizations or use identifiers for
   many arenas at once.
 * Implements `Clone`, `PartialEq` and `Eq` for arenas.
+
+--------------------------------------------------------------------------------
 
 # 1.0.2
 
