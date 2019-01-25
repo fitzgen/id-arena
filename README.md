@@ -38,19 +38,6 @@ version = "2"
 default-features = false
 ```
 
-### `rayon` Support
-
-If the `rayon` feature of this crate is activated:
-
-```toml
-[dependencies]
-id-arena = { version = "2", features = ["rayon"] }
-```
-
-then you can use [`rayon`](https://crates.io/crates/rayon)'s support for
-parallel iteration. The `Arena` type will have a `par_iter` family of methods
-where appropriate.
-
 ### Example
 
 ```rust
