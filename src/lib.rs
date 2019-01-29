@@ -386,7 +386,7 @@ where
     /// assert_eq!(id, id2);
     /// assert!(arena.get(id).is_some());
     /// ```
-    pub fn next_id(&mut self) -> A::Id {
+    pub fn next_id(&self) -> A::Id {
         let arena_id = self.arena_id;
         let idx = self.items.len();
         A::new_id(arena_id, idx)
