@@ -36,7 +36,7 @@
 //! default-features = false
 //! ```
 //!
-//! ### `rayon` Support
+//! ## `rayon` Support
 //!
 //! If the `rayon` feature of this crate is activated:
 //!
