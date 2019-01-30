@@ -1,3 +1,14 @@
+# 2.2.0
+
+Released 2019-01-30.
+
+* Add the `Arena::alloc_with_id` method. This is better than using
+  `Arena::next_id` directly most of the time (but is also not *quite* as
+  flexible). See [#9](https://github.com/fitzgen/id-arena/issues/9) and
+  [#10](https://github.com/fitzgen/id-arena/pull/10).
+
+--------------------------------------------------------------------------------
+
 # 2.1.0
 
 Released 2019-01-25.
