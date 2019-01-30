@@ -1,3 +1,13 @@
+# 3.0.0
+
+Released 2019-01-29.
+
+* Replaced the `Arena::next_id` method with the less bug prone
+  `Arena::alloc_with_id` method. See
+  [#9](https://github.com/fitzgen/id-arena/issues/9).
+
+--------------------------------------------------------------------------------
+
 # 2.1.0
 
 Released 2019-01-25.
