@@ -388,8 +388,13 @@ where
         self.alloc(val)
     }
 
+    /// Get the id that will be used for the next item allocated into this
+    /// arena.
+    ///
+    /// If you are allocating a `struct` that wants to have its id as a member
+    /// of itself, prefer the less error-prone `Arena::alloc_with_id` method.
     #[inline]
-    fn next_id(&self) -> A::Id {
+    pub fn next_id(&self) -> A::Id {
         let arena_id = self.arena_id;
         let idx = self.items.len();
         A::new_id(arena_id, idx)
