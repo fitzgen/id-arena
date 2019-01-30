@@ -364,8 +364,7 @@ where
         id
     }
 
-    /// Get the id that will be used for the next item allocated into this
-    /// arena.
+    /// Allocate an item with the id that it will be assigned.
     ///
     /// This is useful for structures that want to store their id as their own
     /// member.
@@ -379,14 +378,18 @@ where
     ///
     /// let mut arena = Arena::<Cat>::new();
     ///
-    /// let id = arena.next_id();
-    /// assert!(arena.get(id).is_none());
-    ///
-    /// let id2 = arena.alloc(Cat { id });
-    /// assert_eq!(id, id2);
-    /// assert!(arena.get(id).is_some());
+    /// let kitty = arena.alloc_with_id(|id| Cat { id });
+    /// assert_eq!(arena[kitty].id, kitty);
     /// ```
-    pub fn next_id(&self) -> A::Id {
+    #[inline]
+    pub fn alloc_with_id(&mut self, f: impl FnOnce(A::Id) -> T) -> A::Id {
+        let id = self.next_id();
+        let val = f(id);
+        self.alloc(val)
+    }
+
+    #[inline]
+    fn next_id(&self) -> A::Id {
         let arena_id = self.arena_id;
         let idx = self.items.len();
         A::new_id(arena_id, idx)
