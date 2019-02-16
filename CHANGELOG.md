@@ -1,3 +1,11 @@
+# 2.2.1
+
+Released 2019-02-15.
+
+* Make sure our rayon parallel iterators are exported. Previously instances of
+  them were returned by `pub` methods but the types themselves were not
+  exported.
+
 # 2.2.0
 
 Released 2019-01-30.
