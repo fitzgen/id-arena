@@ -125,6 +125,8 @@ use std::vec::{self, Vec};
 
 #[cfg(feature = "rayon")]
 mod rayon;
+#[cfg(feature = "rayon")]
+pub use rayon::*;
 
 /// A trait representing the implementation behavior of an arena and how
 /// identifiers are represented.
