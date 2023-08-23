@@ -117,6 +117,7 @@ use core::sync::atomic::{self, AtomicUsize};
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 use alloc::vec::{self, Vec};
+use serde::{Serialize, Deserialize};
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -186,9 +187,11 @@ pub trait ArenaBehavior {
 }
 
 /// An identifier for an object allocated within an arena.
+#[derive(Serialize, Deserialize)]
 pub struct Id<T> {
     idx: usize,
     arena_id: u32,
+    #[serde(skip)]
     _ty: PhantomData<fn() -> T>,
 }
 
@@ -288,10 +291,13 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
 /// arena[a] = "Alice";
 /// assert_eq!(arena[a], "Alice");
 /// ```
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Arena<T, A = DefaultArenaBehavior<T>> {
     arena_id: u32,
+
     items: Vec<T>,
+
+    #[serde(skip)]
     _phantom: PhantomData<fn() -> A>,
 }
 
@@ -715,6 +721,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::println;
+
     use super::*;
 
     #[test]
@@ -722,5 +730,21 @@ mod tests {
         fn assert_send_sync<T: Send + Sync>() {}
         struct Foo;
         assert_send_sync::<Id<Foo>>();
+    }
+
+    #[test]
+    fn serialize_and_deserialize() {
+        let mut arena = Arena::<usize>::new();
+        let id1 = arena.alloc(1);
+        let id2 = arena.alloc(2);
+        let id3 = arena.alloc(3);
+
+        let serialized = serde_json::to_string(&arena).unwrap();
+        println!("{}", serialized);
+        let deserialized: Arena<usize> = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(deserialized[id1], 1);
+        assert_eq!(deserialized[id2], 2);
+        assert_eq!(deserialized[id3], 3);
     }
 }
