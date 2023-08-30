@@ -117,7 +117,9 @@ use core::sync::atomic::{self, AtomicUsize};
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 use alloc::vec::{self, Vec};
-use serde::{Serialize, Deserialize};
+use serde::de::{Visitor, SeqAccess};
+use serde::ser::SerializeSeq;
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -190,6 +192,7 @@ pub trait ArenaBehavior {
 #[derive(Serialize, Deserialize)]
 pub struct Id<T> {
     idx: usize,
+    #[serde(skip)]
     arena_id: u32,
     #[serde(skip)]
     _ty: PhantomData<fn() -> T>,
@@ -291,14 +294,65 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
 /// arena[a] = "Alice";
 /// assert_eq!(arena[a], "Alice");
 /// ```
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Arena<T, A = DefaultArenaBehavior<T>> {
     arena_id: u32,
 
     items: Vec<T>,
 
-    #[serde(skip)]
     _phantom: PhantomData<fn() -> A>,
+}
+
+impl<T: Serialize, A> Serialize for Arena<T, A> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.items.len()))?;
+        for item in &self.items {
+            seq.serialize_element(item)?;
+        }
+        seq.end()
+    }
+}
+
+impl<'de, T: Deserialize<'de>, A> Deserialize<'de> for Arena<T, A> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ArenaVisitor<T, A> {
+            _marker: PhantomData<fn() -> Arena<T, A>>,
+        }
+
+        impl<'de, T: Deserialize<'de>, A> Visitor<'de> for ArenaVisitor<T, A> {
+            type Value = Arena<T, A>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a sequence")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<Arena<T, A>, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let mut items = Vec::new();
+                while let Some(item) = seq.next_element()? {
+                    items.push(item);
+                }
+
+                Ok(Arena {
+                    arena_id: 0, // Or another default value
+                    items,
+                    _phantom: PhantomData,
+                })
+            }
+        }
+
+        deserializer.deserialize_seq(ArenaVisitor {
+            _marker: PhantomData,
+        })
+    }
 }
 
 impl<T, A> Default for Arena<T, A>
