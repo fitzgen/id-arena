@@ -15,6 +15,10 @@ features = ['rayon']
 
 [dependencies]
 rayon = { version = "1.0.3", optional = true }
+serde = { version = "^1.0", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0"
 
 [features]
 default = ["std"]

@@ -117,6 +117,9 @@ use core::sync::atomic::{self, AtomicUsize};
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 use alloc::vec::{self, Vec};
+use serde::de::{Visitor, SeqAccess};
+use serde::ser::SerializeSeq;
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -186,9 +189,12 @@ pub trait ArenaBehavior {
 }
 
 /// An identifier for an object allocated within an arena.
+#[derive(Serialize, Deserialize)]
 pub struct Id<T> {
     idx: usize,
+    #[serde(skip)]
     arena_id: u32,
+    #[serde(skip)]
     _ty: PhantomData<fn() -> T>,
 }
 
@@ -291,8 +297,62 @@ impl<T> ArenaBehavior for DefaultArenaBehavior<T> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Arena<T, A = DefaultArenaBehavior<T>> {
     arena_id: u32,
+
     items: Vec<T>,
+
     _phantom: PhantomData<fn() -> A>,
+}
+
+impl<T: Serialize, A> Serialize for Arena<T, A> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.items.len()))?;
+        for item in &self.items {
+            seq.serialize_element(item)?;
+        }
+        seq.end()
+    }
+}
+
+impl<'de, T: Deserialize<'de>, A> Deserialize<'de> for Arena<T, A> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ArenaVisitor<T, A> {
+            _marker: PhantomData<fn() -> Arena<T, A>>,
+        }
+
+        impl<'de, T: Deserialize<'de>, A> Visitor<'de> for ArenaVisitor<T, A> {
+            type Value = Arena<T, A>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a sequence")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<Arena<T, A>, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let mut items = Vec::new();
+                while let Some(item) = seq.next_element()? {
+                    items.push(item);
+                }
+
+                Ok(Arena {
+                    arena_id: 0, // Or another default value
+                    items,
+                    _phantom: PhantomData,
+                })
+            }
+        }
+
+        deserializer.deserialize_seq(ArenaVisitor {
+            _marker: PhantomData,
+        })
+    }
 }
 
 impl<T, A> Default for Arena<T, A>
@@ -715,6 +775,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::println;
+
     use super::*;
 
     #[test]
@@ -722,5 +784,21 @@ mod tests {
         fn assert_send_sync<T: Send + Sync>() {}
         struct Foo;
         assert_send_sync::<Id<Foo>>();
+    }
+
+    #[test]
+    fn serialize_and_deserialize() {
+        let mut arena = Arena::<usize>::new();
+        let id1 = arena.alloc(1);
+        let id2 = arena.alloc(2);
+        let id3 = arena.alloc(3);
+
+        let serialized = serde_json::to_string(&arena).unwrap();
+        println!("{}", serialized);
+        let deserialized: Arena<usize> = serde_json::from_str(&serialized).unwrap();
+
+        assert_eq!(deserialized[id1], 1);
+        assert_eq!(deserialized[id2], 2);
+        assert_eq!(deserialized[id3], 3);
     }
 }
