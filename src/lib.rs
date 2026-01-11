@@ -28,7 +28,8 @@
 //!
 //! ## `#![no_std]` Support
 //!
-//! Requires the `alloc` nightly feature. Disable the on-by-default `"std"` feature:
+//! This crate supports `no_std` environments that have access to the `alloc`
+//! crate. Disable the on-by-default `"std"` feature:
 //!
 //! ```toml
 //! [dependencies.id-arena]
@@ -102,7 +103,6 @@
 #![deny(missing_docs)]
 // In no-std mode, use the alloc crate to get `Vec`.
 #![no_std]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 
 use core::cmp::Ordering;
 use core::fmt;
